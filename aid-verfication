@@ -1,0 +1,126 @@
+#
+#
+# main() will be invoked when you Run This Action.
+#
+# @param Cloud Functions actions accept a single parameter,
+#        which must be a JSON object.
+#
+# @return which must be a JSON object.
+#         It will be the output of this action.
+#
+#
+import sys
+import hashlib
+
+blocks = [
+   {
+   "type" : "prop",
+   "to" : "Red Cross",
+   "height" : 0,
+   "amount" : "10.00",
+   "item" : "Medical Aid",
+   "hash" : "202cb962ac59075b964b07152d234b70"
+   },
+   {
+   "type" : "prop",
+   "to" : "Humanitarian relief fund",
+   "height" : 1,
+   "amount" : "42.00",
+   "item" : "Food Aid",
+   "hash" : "65ded5353c5ee48d0b7d48c591b8f430"
+   },
+   {
+       "type" : "comf",
+       "from" : "Donor X",
+       "propHeight" : 0,
+       "height" : 0,
+       "nounce" : "123"
+   },
+   {
+   "type" : "prop",
+   "to" : "World Food Program",
+   "height" : 2,
+   "amount" : "22.00",
+   "item" : "Military Aid",
+   "hash" : "979d472a84804b9f647bc185a877a8b5"
+   },
+   {
+       "type" : "comf",
+       "from" : "Donor W",
+       "propHeight" : 2,
+       "height" : 1,
+       "nounce" : "213"
+   },
+   {
+   "type" : "prop",
+   "to" : "Red Cresent Society Society for Relief",
+   "height" : 3,
+   "amount" : "22.00",
+   "item" : "Military Aid",
+   "hash" : "9b04d152845ec0a378394003c96da594"
+   },
+   {
+       "type" : "comf",
+       "from" : "Donor T",
+       "propHeight" : 3,
+       "height" : 2,
+       "nounce" : "dummy"
+   },
+   {
+   "type" : "prop",
+   "to" : "World Vision International",
+   "height" : 4,
+   "amount" : "22.00",
+   "item" : "Military Aid",
+   "hash" : "950a4152c2b4aa3ad78bdd6b366cc179"
+   },
+   {
+       "type" : "comf",
+       "from" : "Donor R",
+       "propHeight" : 4,
+       "height" : 3,
+       "nounce" : "312"
+   }
+]
+
+props = [b for b in blocks if b["type"] == "prop"]
+comfs = [b for b in blocks if b["type"] == "comf"]
+def main(dict):
+   totalBlocksValidated = []
+   totalBlocksFailed = []
+   rBlocksValidated = []
+   rBlockssFailed = []
+   rBlocksFailed = 0
+   blocksToVal = dict['B2V']
+   for comfB in comfs:
+       pBlock = props[comfB["propHeight"]]
+       a1 = hash(comfB["nounce"])
+       a2 = pBlock["hash"]
+       if a1 == a2:
+           pBlock.update({"nounce" : comfB["nounce"]})
+           pBlock.update({"from" : comfB["from"]})
+           totalBlocksValidated.append(pBlock)
+           if comfB["propHeight"] in blocksToVal:
+               rBlocksValidated.append(pBlock)
+       else :
+           pBlock.update({"nounce" : "Verification failed for comfirmation id {}".format(comfB["height"])})
+           pBlock.update({"pretend sender" : comfB["from"]})
+           totalBlocksFailed.append(pBlock)
+           if comfB["propHeight"] in blocksToVal:
+               rBlockssFailed.append(pBlock)
+               rBlocksFailed += 1
+   a = len(dict['B2V']) - len(rBlocksValidated)
+   return {
+       "Total Blocks verified" : len(totalBlocksValidated),
+       "Total Blocks unverification" : len(props) - len(totalBlocksValidated),
+       "Total Blocks failed verification" : len(totalBlocksFailed),
+       "Requested Blocks count" : blocksToVal,
+       "Requested Blocks Verfied" : rBlocksValidated,
+       "Requested Blocks Failed Verification" : rBlockssFailed,
+       "Requested Blocks failed to verify" : rBlocksFailed,
+       "Requested Blocks unvarified" : a
+       }
+
+def hash(value):
+   hash_object = hashlib.md5(value.encode())
+   return "{}".format(hash_object.hexdigest())
